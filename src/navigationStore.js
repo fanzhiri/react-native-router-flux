@@ -424,6 +424,9 @@ function createWrapper(Component, wrapBy, store: NavigationStore) {
         if (this.ref && this.ref.onEnter) {
           this.ref.onEnter(navigation && navigation.state);
         }
+        if (this.ref && navigation && navigation.state && navigation.state.routeName && this.ref.onComeback) {
+          store.addRefComeback(originalRouteName(navigation.state.routeName),this.ref.onComeback);
+        }
       }
 
       componentWillUnmount() {
@@ -583,6 +586,12 @@ class NavigationStore {
         params: this.currentParams,
       }));
       this.onEnterHandler(currentScene);
+      if(currentState.routes.length <= prevState.routes.length){
+        let nolinecurrentScene = originalRouteName(currentScene);
+        if((this.refs[nolinecurrentScene] != null) && (this.refs[nolinecurrentScene].comeback != null)) {
+            this.refs[nolinecurrentScene].comeback(activeState.params !=null?activeState.params.popdata:null);
+        }
+      }
     } else {
       const routeName = getRouteNameByKey(this.state, action.key);
       if (action.type === 'Navigation/DRAWER_OPENED') {
@@ -602,6 +611,10 @@ class NavigationStore {
 
   addRef = (name, ref) => {
     this.refs[name] = ref;
+  };
+
+  addRefComeback = (name, func) => {
+    this.refs[name].comeback = func;
   };
 
   deleteRef = (name) => {
